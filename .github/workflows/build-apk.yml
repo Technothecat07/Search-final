@@ -1,0 +1,47 @@
+name: Build SIGNAL APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Generate Android platform
+        run: |
+          flutter create \
+            --platforms=android \
+            --project-name signal_student_search \
+            --org com.signalstudentsearch \
+            --no-pub \
+            .
+
+      - name: Restore app source
+        run: |
+          test -f lib/main.dart
+          test -f pubspec.yaml
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: signal-student-search-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
