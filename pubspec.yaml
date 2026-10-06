@@ -1,0 +1,25 @@
+name: signal_student_search
+description: SIGNAL — a mobile Student Search tool based on the Student Search Tool v16 dataset and search semantics.
+publish_to: "none"
+version: 1.0.0+1
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  share_plus: ^10.1.4
+  path_provider: ^2.1.5
+  cross_file: ^0.3.4+2
+  shared_preferences: ^2.5.3
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/signal_logo.png
+    - assets/signal_icon.png
+    - assets/data/records.json
+    - assets/data/meta.json

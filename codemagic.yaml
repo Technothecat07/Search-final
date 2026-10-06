@@ -1,0 +1,14 @@
+workflows:
+  android-apk:
+    name: SIGNAL Android APK
+    environment:
+      flutter: stable
+    scripts:
+      - name: Create Android project files
+        script: flutter create --project-name signal_student_search --org com.signalstudentsearch --platforms android .
+      - name: Get packages
+        script: flutter pub get
+      - name: Build APK
+        script: flutter build apk --release
+    artifacts:
+      - build/app/outputs/flutter-apk/app-release.apk
