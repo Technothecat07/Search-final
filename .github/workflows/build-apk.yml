@@ -47,22 +47,15 @@ jobs:
               ).decode("utf-8")
 
           replacements = {
-              "filters": (
-                  r"  Future<void> _filtersSheet\(\) async \{.*?(?=\n  Future<void> _export)"
-              ),
-              "export": (
-                  r"  Future<void> _export\(\) async \{.*?(?=\n  void _openDetail)"
-              ),
-              "detail": (
-                  r"  void _openDetail\(int i\) \{.*?(?=\n  @override Widget build)"
-              ),
-              "body": (
-                  r"  Widget _body\(\) \{.*?(?=\n\})"
-              ),
+              "filters": r"  Future<void> _filtersSheet\(\)[^{]*\{.*?(?=\n  Future<void> _export)",
+              "export": r"  Future<void> _export\(\) async \{.*?(?=\n  void _openDetail)",
+              "detail": r"  void _openDetail\(int i\).*?(?=\n  @override Widget build)",
+              "body": r"  Widget _body\(\)\{.*?(?=\n\})",
           }
 
           for name, pattern in replacements.items():
               fixed = decode(name)
+
               source, count = re.subn(
                   pattern,
                   lambda m: fixed,
@@ -76,7 +69,6 @@ jobs:
                       f"Could not repair {name} section in lib/main.dart"
                   )
 
-          # Fix the invalid Dart set declaration if it is still present.
           source = source.replace(
               "final selected=Set<String>{'regno','name','branch'};",
               "final selected = <String>{'regno', 'name', 'branch'};",
@@ -100,7 +92,7 @@ jobs:
             --no-pub \
             .
 
-      - name: Verify source
+      - name: Verify Flutter source
         run: |
           test -f lib/main.dart
           test -f pubspec.yaml
