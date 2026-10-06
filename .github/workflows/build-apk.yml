@@ -3,14 +3,15 @@ name: Build SIGNAL APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up Flutter
@@ -19,7 +20,78 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Generate Android platform
+      - name: Repair lib/main.dart
+        shell: python
+        run: |
+          import re
+          import gzip
+          import base64
+          from pathlib import Path
+
+          path = Path("lib/main.dart")
+          source = path.read_text(encoding="utf-8")
+
+          payloads = {}
+
+          payloads["filters"] = """H4sIABVQxWoC/+1Y/YrbOBD/v0+hQqllyJm9o+3tpfvBJt2FhbQsm9BylLKothyL2pKR5Hy0BPo092D3JDeyncRJk1jK9Y5ynP9IbM2HRjOj34yE0E2hC0nPJoJFF+ghZqmmUg0TSjX2EVFzHqIvjxA8ZEqYRioR09ciImlPaC2ykrESxiUXQqHgms50d/nSqceZGoZSpGkfhs0/jbpIy4Iu6R9J+GksRcGjvkiF7KJRQjMaiBjXivwgNIRhWI6rQsYkXEsXLI0oSOFQz/zaZPNICuvj6JUk4zH5mNLKiPKtXOSKESE6ywkHq2KSqpXi0nTONCNpP4E5huwz7aLg9LTJkDHeJD5/vkEksybxtxdN4truhw5SpW1N6xsrGGqiaVykvUoCb/BsOQBUUb2tp6HrjkQR42P8DR2hvCKV4VMaXUdjestBmwpiKbLB6L6Hf37WQacdVP75nR06QrPcLoI4FhnfNUnNIinvovc76QjdiyneQ7IRr1PRLKEMK43wAc6VzSNINOzdVNvAAz/qeUqr4aF5xTEkYxXJX046yHy9o2ycQL7frN6D6enJib/TNcvnINHM1itgf/HDNgt+J6lSZifhXdHefGIhEY4ZJylSkNKo3uvBhKQFVe3yCKlAz3MaoXPkeS8tuBVNaahpFIQpJRL7NjKpmFrrT8DZVsyLFjrkNzYeXLSYuOjY5FCVdlUm9QfXV/foajDwjk8HyEZAy++fEG/IhI2JFjLIRV7iZpsfH2TBhxDKMMHf3VNXd3eD39HN7WB0fT882lsf9pH2yrTDQ23sgCn9ltEpPow4VXEDIK7Q/NA61ihmCl+uAgrSjKogI/nZOwbQqy8wHrdFsgb1ciGKCT5igFMtkdRML3ENj4NPdL6CunVM1oC3C+J+bYO4rRVWOLO5tNgGdZaQdb5ErPfxh8cvLcWyItUMRCUNhYxUq9TyMXZiLH10foG8J18kzIkuLwFqFl4AMcqw79vrmiZUUownpbZJwNQboa+zXM/R06dogh4DhP3kOejTYmjaM3uBlPKxTtDZuZXI6Um7d9sbCfvGQs2zjIJTQ5wIyT5DjpG0azqMCZWahebjWWumWfYdxzUS1n3J31e/AUnNpgR6VpqqOg9j38ohqwY2RrhRjtcJ6DsoQS7Rtou84OkcywpbXjitaLtlcxRFZlM3PFJtkIXXcdbzTYPorMFUja0DD5TijcNODohD5LxzhO498P1RpJG7OucQOQo4sd+JvMhfU15UndHZECCEjy/cAlAf7d6a2gQlO8hERN1sZppmvfUprsT4KtHfOzprtaBbUIknlUne9YyEGpkDMBxHNk4pDYrvHJndk5nDOWFcbU+1Gned6IMbu4D2stqS4MuqXta9uXkrowPFfOJoBIN4LNHnFv6w+VFBwWPYBQ+ZkBS6n/pM56TagdnaEdY6DajzIrthNI1UENYRgp7KHtSdatmx1QxZnsAPAny5SndsjUzbRzRrxJ/nhX61Gq7K6qi8sPJeAxpkReb57sgoeD8hfNzM2/ooO/mRMHN5J2JuMKKemOEpi3TS3XOP8x+IKJl9z4jWFw4/VEgdENYWGKDPpP9jyK6M2861IxqyhHFdZ+donlP05Muqs7+Ek91ATKnsE0Wh5plGf/Hn1z+8f6FT253wy/u+HwzETOkrT/a+o1mm8NtcpO28MhECZswhblWPgqqLU+8YTzev6cDRD2EihKJlF2oquLvKPS2OLjj9Z5t2F/ixY7XSaKGr9TZz4Zv9xpTGLdoOarLS4jteS+70wQ7ebyzbunfdoDdoq/F6rPxePPoL12CC+A8cAAA="""
+
+          payloads["export"] = """H4sIABVQxWoC/81XWW/bOBB+z6+YhwKSNl413Ydu4RyFnTiLAEnajYy2QBAEtDSyuKFFg6R8bKr/vkPrsJw4ctKnNWCL4tzDmY9jgPPMZAqPZpJHJ3CPi6lUxvWA6WUawuMe0IfH4MZcGFQY+VwPJlOz9EoaQBCyOJYiukKtMR2j8mXshjI1uDCerxM5D1IWPvSZcksJACJrA/X+ijs1XRiSjOtcS1CoM2E0GAmazdB3PK9TSnuH5UIheZ4Wb/ne6hHzlAnQKDA0GMExHAVG8XR88ugoHKfS6YCTsgna50ixNEyc/LAhGSaSYiA5NmfcgHX+SkZM9KUxchIkiOYosN9C60kVURlut1pUvnIdhEoKcUrb9olRF4zKsKKPMi4iVF1wQ7NYp7SKDQLDDMaZ6Bd86wQ+Ee1QzKYp39TBYuwpZO4GkXxOSEEXvrIoolieUgGmBaFbHtYgGuNFSma0z4RwP3ysD+SZyoD/i1FfLp7rBEiQjxNK1BVGnP2doVquyoWi9zWJ+QUdfgP/U2eLeGnhVIpskm7TX7IoTLtwu5UOcCPn7guk14ivC3iwmLI0wsht4ax9Lmo7oGquqpuqUJulwIIW2KUbU6XY/HXhj4MO2LfvZcbO67U//3Rw4HmdFqutRGutn1FFp+2Oy/Srsk1NzhMiHJ/YInOrVdFiPhVJj8pBsBEK7T/gUrc7VqejyGCRlN7lpfP/CCcUSHj0CyFcf7ke/HIMdy+RXpQpTJ/xGbew8CLb7gItQ7nk2nzjOG/L4LozGqftT9j06DsncDAnrhs/xaCnnxKTThMMH0ZyYc0OOZV9qxDAjImMWmJ9TNQLjKeaDHZ2iMr0NGF0LdlTnzWP/XGHYHHvzeD4eAXZrxGAjb4g5w53iuRAmcS36VY4kTN8nfodHPnO/BluKoQqu/w2voPPn2F36iOk+2LzwnuhzNsCyT3fSFsobotB780ddM7tdVzghs/DNvB4BhzXbMbHzEjlT+W0un+Lw2nx0RqpQOPCGrQ/2rfzzT0TpkVylfdNvAl63wYw/DF03hr5VqzZwvts68nGxpnla1q9X+7Rez1EVuPVMaSZEPDzZzlwrYfK5kxXjGQxRxFpGsmaoDNPaBYt1dVgsK6TpvyIRItxrZ/FsQXLkioVdTdTwInh4JAeR1APuYIGWZPQ5v7+uu9H/lxxgyJ1nZvB6ZebM3j3yGEfPuROHfRKa+k48LT0vokdDS3vHjcbKu+SxsqHW35X7jtOw0D+zJmatN6yWfDjVYG7f9IY4fzueP4/khPzFm5vywgdcVVPwQTtQ5zQ/wKmlmdcUZlLtdxMMtlC4j+3UE5hkbQ/ZSbJ32s+Jvq9NhmBgbkvBx/fLEwVUmHDKigc6unitNwRHWe59DZ4g4QppD8W9PvDWtRV596uXt2VLmu+AxM+weFySiDk2LH8/VRQoThe3QPF0O4EF39d9y6pTFZeQkAzQJisp7S9uq7zvf8AcYqLVjENAAA="""
+
+          payloads["detail"] = """H4sIABVQxWoC/51VbWvbMBD+3l9xg1HLYExaWOnSN5q2g0I3SlPaDyEU1b4kYrIUJOVtJbDfsp+2XzJJcd6a2HGnD7Z8z6O7k073GGAoWQovso/iGg1lnDBhgIXwtgd2aDRNQw0SEsLZuf3kmBhMb0WKYzizvJMZrSdH32VKeUMaI7NmD9GcOs/nxOMAiRQGx6Y+n0S5nelmoiTnV9bs3pjWwagBzvHXAeMpqjqQxIznWbmh0AyUgGtFu136ynHmxs9cdLIgAuC4T4X126FcLxz74IIZRvlVz8Zosl9Yh/j4aJWQ0fEq+HUNXKb2EoH24VcTdKPDBOWg7El1GDeoMG2x9skaJd9Hk3bwUiEla6A9Nxe+Dvc0TZnovkcB+jPAn6s2cJN28VbYqum4o2R29/jQIAdHERxH4F4Hh2G04SIPcSX5IBObEXKCQlGH1hYU4EGOyFZg91I3bnx5MCWFjEWOj/bmlNEAgs9vqhUImmHQhosLCIJpEJWu0GbCcX5+LkDTGUjHXshZ2Q9rEbivZ2Tdnr3B3xbzeHRcq4Vl7kvAEujWJtMY2E4SZZuV4l6h1q5jZt35gw5Zlxqp4r7s+34pS43ZIPNtu4DEPXSccKnxf9JubwcK+GWVnNVQYVfIRREB/v7+A+CRV0VF0ttd37yyy5omkkvbr489zDCWHX9EsTc2E2/rK5ZRNQk/tJXZEV6zIbNqQApIuy55fsHvmDZPDEfFdU/mQmk3MhOd4lotu0/FaJcx1KWtEI96VqMIQX+dMP6JE/h0BoGWA5Xgi9UwDGB/fzuig7DceUb7p8/MCpQ59yHeSui5KhbKXjUJ1JMsQ7vthAxRGZZQXoejsFwO8kKUaNqCqaTWl2OmLznriswesBXRDVusDVUm2uWrgk7Oh1OltCHHZCcTYMRS06vDwZdaVIFdWWXnw/5vkeuWvw++Hf0sqrR2ozsrrXINsKOJpWgOVIcm+EQVo8JEFR0XafxRrVbNRViFVoFUgbKQk9WSWd3EeEj5AKdBuNNJu5xQ/ls7KQSnYWykkzFS6OEj8rolyw3eO8NactMltrDnNv893fsHhTMwwwMLAAA="""
+
+          payloads["body"] = """H4sIABVQxWoC/+1ZX2/bNhB/76fgwwDLgOAlWdoV7tqgcRMgQNIEddY+BIHBSCebmEQKJBU7LQL0s+xhH6yfZEdRcpXYoiRnzbaiBJJI5PF4vPvdP4WQDyycgiaTKxHeeH3y6QnBIUFnkpMxjeC1BOrlk4QEMxaHQ3JMb0Sm9zN8AVmuEXJlJ4bEC/TCJ0HJzI6C5UjEWcK9ykLBVgIfkos784Sc0TBkfOrdmyYktQtDEgiuNDnAOxxxBVoNIimS4/N3+972rk+2d/AH/z7v+yssisusE6hJLDvOYaEPGcSht3aZGNm0FHFsdMJpAiMd+zWkgo9mlE8BBfImffLyFZnIjI+BymDm9et2hRAISTUTKOMRTzP9ZjlRJxOqTkLEFkeB2WS1Z54980sNVH5i7YGEzBjX5uJD0hvrLASu86t9+fxXr36TyqLlkWcizdIT4Nl+prXgv421REO+qpfXKGcMMQQ61871XVitOQz0WFMNnpfr0Uh3IkIgL8l1/4VzZ1XlLspb37HINCT7S0+wtrRqvnAevtTLETLwrmmcAer4YEEDTTQqvOeXiDXq96or/b6/AesRopMyru4zXs672V46lbAeXRmPRBxOEiHBwbt2qWahZtqePmYfIdwXC28GbDpD2D6vIe/kzSGgiuL/gT8nlNMpTLq49amegczdRpGfi5uq/65/WwF/ePgPD2/y8HdiXuvbDanejEMWa5CjGUtdWFZLJCuWsJhK/1sBv+D/WKin11RTucbkNNNiQuegRAI+SvURobf9zImsmF5BXLKymBwXt1EpxDEGjN4m8FmBxJyFelaPCDNOM43nIXkergYG1+5YdSZBKWOxSZQjQo1nAHoDX9EZhzZqyhVUnHWaAid7pGfBqHpk+PX5QRpLaYC1vIMul8IFfIRmpnwnxU0M9jpj8+g5QRuIWCDczmeQwEBEpqfoD/LJcWDn+DiTEYr9nkpGuXZHyAhj3thic8dFuYkSLztErTW0K3QrEweLlPIQ1pQmRVy36IBwwNRBkuqbtfLskRGW69WOrXNLVI4E08frBVNWoyeVt0HCuEu/bSKtGUcNfljSlC3LRESR30BvY9PT3Sa6fxh6Dbm7Yxa7u80Gz7cCLaJRtXyKXpZ3Zc5w4Mzt9cl57fyQHDOl3zOYoyVSitUqhI5itV3f/sy27TtbjkuYMmwkMq4r8I+BT/XMUahaCYWs1G8+mVRruE6GuFcK+oS5k3jEOI2JydmlyBfs8kXjhimg95tdn3pJDyP+CY0Bi7peZF4OITGvtxdcyMSTFz1L3bvsX5I9TBU/farM5TO9217zmZLO32IPgIdaDqYhKPbvIYMBlvWJu5ywfBhnmuHflyXHMkaRnBPip5xX2ZXKmwVvC83fH2jxe5pixUUVmIMcJ5XflqgM3TEjoXLKMPZUcPcRpGjwNBsVj/gfH7A2aQpKV0Kipt/RkGVqSPYrb4OAySDDIgch3m+KQYKf0xQxZXtHgWn/Td7oeKxxayFv7bez9j5J8botZF0e6aiwN8kB5Sj6FVfmujuKsm9312+5ofT19juqrTpGizaNeuc0k6KLUXmzvL7fmnUrEO702zJsTVgWEA11Rs22phJzJfra0OJ32NKtBl1XRH4ooHK4fB7Mn29t+Z0YtagwzjY2fgd7dSBtSdiSbH2f1hqS9QXxAwvbe9ukUMpUtq9jNuUJmFpjtDI3wNZHar8b2juEv3b91+pYyduYtrvBNKGLY8QehpDtbhvFNcgoFnPraafF28C09qliqhuzwme/FrzWc+uc8Vd0xmq797T/jVyntnT/pROTTQ0rYcrF0rKEfPn8JyH5ypWkPJh9F0b/au7OTdmjm33nUcyuxZyvtXrITPUc6JXFovb/LlDQaXf7rz6P8BXgQYjrQHz5byb0ytdN1NG1FHwijXO0YtJC8kY+/Qd8inE0s7et/2Fxb+LOnSoHLBkW9PnS7ZO/AUoeMbSPIQAA"""
+
+          def decode(name):
+              return gzip.decompress(
+                  base64.b64decode(payloads[name])
+              ).decode("utf-8")
+
+          replacements = {
+              "filters": (
+                  r"  Future<void> _filtersSheet\(\) async \{.*?(?=\n  Future<void> _export)"
+              ),
+              "export": (
+                  r"  Future<void> _export\(\) async \{.*?(?=\n  void _openDetail)"
+              ),
+              "detail": (
+                  r"  void _openDetail\(int i\) \{.*?(?=\n  @override Widget build)"
+              ),
+              "body": (
+                  r"  Widget _body\(\) \{.*?(?=\n\})"
+              ),
+          }
+
+          for name, pattern in replacements.items():
+              fixed = decode(name)
+              source, count = re.subn(
+                  pattern,
+                  lambda m: fixed,
+                  source,
+                  count=1,
+                  flags=re.DOTALL,
+              )
+
+              if count != 1:
+                  raise RuntimeError(
+                      f"Could not repair {name} section in lib/main.dart"
+                  )
+
+          # Fix the invalid Dart set declaration if it is still present.
+          source = source.replace(
+              "final selected=Set<String>{'regno','name','branch'};",
+              "final selected = <String>{'regno', 'name', 'branch'};",
+          )
+
+          source = source.replace(
+              "final selected = Set<String>{'regno','name','branch'};",
+              "final selected = <String>{'regno', 'name', 'branch'};",
+          )
+
+          path.write_text(source, encoding="utf-8")
+
+          print("lib/main.dart repaired successfully.")
+
+      - name: Generate Android platform files
         run: |
           flutter create \
             --platforms=android \
@@ -28,10 +100,11 @@ jobs:
             --no-pub \
             .
 
-      - name: Restore app source
+      - name: Verify source
         run: |
           test -f lib/main.dart
           test -f pubspec.yaml
+          echo "Flutter source verified."
 
       - name: Install dependencies
         run: flutter pub get
